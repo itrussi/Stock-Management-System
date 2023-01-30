@@ -3,7 +3,6 @@ import os
 from numpy import mod
 import configparser
 from functools import cache
-from multiprocessing import Pool
 
 BLANK = object()
 DELETED = object()
@@ -14,8 +13,6 @@ class HashTable():
 
     def __init__(self):
 
-        os.remove("./__pycache__/hashtable.cpython-310.pyc")
-
         config = configparser.ConfigParser()
         config.read("./Config/hashtable.ini")
 
@@ -23,12 +20,11 @@ class HashTable():
         
         self.length = capacity
         self.values = capacity * [BLANK]
-        self.delete_counter = int(config.get("General", "delete_counter"))
+        self.delete_counter = 0
 
         loaded_files = [x for x in os.listdir("./Stock/") if x.endswith(".txt")]
 
-        with Pool() as pool:
-            pool.imap_unordered(self.load_file, loaded_files)
+        self.load_file(loaded_files)
 
     def load_file(self, list):
         for item in list:
@@ -42,58 +38,41 @@ class HashTable():
 
     @cache
     def get_hash_values(self, data):
-        try:
         
-            if data == "":
-                return "Cannot insert nothing!"
+        if data == "":
+            return "Cannot insert nothing!"
     
-            elif type(data) == str:
-                index = 0
-                hash_value = 0
-                letters = [x for x in data]
-                
-                while index != len(letters):
-                    value = ord(letters[index])
-                    hash_value = hash_value + value
-                    index = index + 1
-                    
-                index = mod(hash_value, (self.len()))
-                
-            elif type(data) == int:
-                index = mod(data, (self.len()))
-    
-            elif type(data) == float:
-                index = mod(round(data), (self.len()))
-    
-            else:
-                index = 0
-                hash_value = 0
-                product = data['Product']        
-                letters = [x for x in product]
-                
-                while index != len(letters):
-                    value = ord(letters[index])
-                    hash_value = hash_value + value
-                    index = index + 1
-    
-                index = mod(hash_value, (self.len()))
-    
-            return index
-
-        except TypeError:
-            
+        elif type(data) == str:
             index = 0
             hash_value = 0
-            product = data['Product']        
-            letters = [x for x in product]
+            letters = [x for x in data]
             
             while index != len(letters):
                 value = ord(letters[index])
                 hash_value = hash_value + value
                 index = index + 1
-
+                    
             index = mod(hash_value, (self.len()))
-
+                
+        elif type(data) == int:
+            index = mod(data, (self.len()))
+    
+        elif type(data) == float:
+            index = mod(round(data), (self.len()))
+    
+        else:
+            index = 0
+            hash_value = 0
+            product = data['Product']        
+            letters = [x for x in product]
+                
+            while index != len(letters):
+                value = ord(letters[index])
+                hash_value = hash_value + value
+                index = index + 1
+    
+            index = mod(hash_value, (self.len()))
+    
         return index
 
     def data_verification(self, data):
@@ -110,16 +89,19 @@ class HashTable():
     def insert(self, data):
 
         verify = self.data_verification(data)
+        dictionary = {
+            "Test": "Test"
+        }
 
         if verify == True:
             index = 0
 
-            if isinstance(data, dict) == True:
-                temp_data = data.get('Product')
-                
-            else:
+            if isinstance(data, type(dictionary)) == True:
+                temp_data = str(data.get('Product'))
+
+            elif isinstance(data, type(dictionary)) == False:
                 temp_data = data
-    
+                
             index = self.get_hash_values(temp_data)
     
             self.values[index] = data
@@ -131,27 +113,41 @@ class HashTable():
 
         self.delete_counter = 0
         index = 0
+        dictionary = {
+            "Test": "Test"
+        }
 
         verify = self.data_verification(data)
 
         if verify == True:
-            index = self.get_hash_values(data)
+
+            if isinstance(data, type(dictionary)) == True:
+                temp_data = str(data.get('Product'))
+
+            elif isinstance(data, type(dictionary)) == False:
+                temp_data = data
+            
+            index = self.get_hash_values(temp_data)
                 
             while self.values[index] != BLANK:
+                temp = self.values[index]
     
-                if isinstance(self.values[index], dict) == True:
-                    temp_dict = self.values[index]
+                if isinstance(temp, type(dictionary)) == True:
+                    temp_dict = temp
                     if temp_dict['Product'] == data:
-                        return self.values[index]
+                        return temp
+                        
+                elif isinstance(temp, type(dictionary)) == False:
+                    pass
     
-                if self.values[index] == data:
-                    return self.values[index]
+                if temp == data:
+                    return temp
     
-                elif self.values[index] == DELETED:
+                elif temp == DELETED:
                     index += 1
                     self.delete_counter = self.delete_counter + 1
     
-                elif self.values[index] == dict:
+                elif temp == dict:
                     index += 1
 
                 else:
@@ -169,16 +165,31 @@ class HashTable():
     def delete(self, data):
 
         verify = self.data_verification(data)
+        dictionary = {
+            "Test": "Test"
+        }
 
         if verify == True:
-            index = self.get_hash_values(data)
+
+            if isinstance(data, type(dictionary)) == True:
+                temp_data = str(data.get('Product'))
+
+            elif isinstance(data, type(dictionary)) == False:
+                temp_data = data
+            
+            index = self.get_hash_values(temp_data)
     
             while self.values[index] != BLANK:
-                if isinstance(self.values[index], dict) == True:
-                    temp_dict = self.values[index]
-                    if temp_dict['Product'] == data:
+
+                temp = self.values[index]
+                
+                if isinstance(temp, type(dictionary)) == True:
+                    if temp['Product'] == data:
                         self.values[index] = DELETED
                         return "Dictionary deleted!"
+
+                elif isinstance(temp, type(dictionary)) == False:
+                    pass
                 
                 if self.values[index] == data:
                     self.values[index] = DELETED
